@@ -18,7 +18,7 @@ pub fn build(b: *std.Build) void {
         .target = target,
     });
     main_cpp.addCSourceFile(.{
-        .file = .{ .path = "win32acl.cpp" },
+        .file = .{ .path = "main_win32acl.cpp" },
         .flags =  &[0][]const u8{}
     });
     main_cpp.linkLibCpp();
