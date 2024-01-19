@@ -1,27 +1,19 @@
-﻿// win32acl.cpp : Defines the entry point for the console application.
-//
-
-
-
-#include "stdafx.h"
-#include <fstream>
+// win32acl.cpp : Defines the entry point for the console application.
 #include <iostream>
 #include <aclapi.h>
-#include <windows.h>
 
 using namespace std;
 
 
-int _tmain(int argc, _TCHAR* argv[])
+int main(int argc, char* argv[])
 {
 	if ( argc != 2 ) {
 		cout<<"usage: win32acl " <<" <filename>\n";
 		return 1;
 	}
 
-	LPCWSTR fname = argv[1];
-
-	//fname = L"C:\\windows";
+	// fname = argv[1];
+	LPCWSTR fname = L"C:\\windows";
 
 	wcout << "file:" << fname << "\n";
 
@@ -32,9 +24,9 @@ int _tmain(int argc, _TCHAR* argv[])
 	PSID sidgroup = NULL;
 
 
-	ULONG result = GetNamedSecurityInfo(fname
+	ULONG result = GetNamedSecurityInfoW(fname
 			,SE_FILE_OBJECT
-			,OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION 
+			,OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION
 			,&sidowner
 			,&sidgroup
 			,&pdacl
@@ -43,17 +35,17 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	if (result != ERROR_SUCCESS){ return NULL;}
 
-	wchar_t* oname = new TCHAR[512];
+	wchar_t* oname = new WCHAR[512];
 	DWORD namelen;
-	wchar_t* doname = new TCHAR[512];
+	wchar_t* doname = new WCHAR[512];
 	DWORD domainnamelen;
 	SID_NAME_USE peUse;
 	ACCESS_ALLOWED_ACE* ace;
 
-	LookupAccountSid(NULL, sidowner,  oname, &namelen, doname, &domainnamelen, &peUse);
+	LookupAccountSidW(NULL, sidowner,  oname, &namelen, doname, &domainnamelen, &peUse);
 	wcout<<"Owner: " << doname << "/" << oname <<"\n";
 
-	LookupAccountSid(NULL, sidgroup,  oname, &namelen, doname, &domainnamelen, &peUse);
+	LookupAccountSidW(NULL, sidgroup,  oname, &namelen, doname, &domainnamelen, &peUse);
 	wcout<<"Group: " << doname << "/" << oname <<"\n";
 
 	wcout<< "\n\n\n::DACL::" << "\n";
@@ -67,13 +59,13 @@ int _tmain(int argc, _TCHAR* argv[])
 		//SID *sid = (SID *) ace->SidStart;
 		if (((ACCESS_ALLOWED_ACE *) ace)->Header.AceType == ACCESS_ALLOWED_ACE_TYPE) {
 			sid = (SID *) &((ACCESS_ALLOWED_ACE *) ace)->SidStart;
-			LookupAccountSid(NULL, sid,  oname, &namelen, doname, &domainnamelen, &peUse);
+			LookupAccountSidW(NULL, sid,  oname, &namelen, doname, &domainnamelen, &peUse);
 			wcout<<"SID: " << doname << "/" << oname <<"\n";
 			mask = ((ACCESS_ALLOWED_ACE *) ace)->Mask;
 		}
 		else if (((ACCESS_DENIED_ACE *) ace)->Header.AceType == ACCESS_DENIED_ACE_TYPE) {
 			sid = (SID *) &((ACCESS_DENIED_ACE *) ace)->SidStart;
-			LookupAccountSid(NULL, sid,  oname, &namelen, doname, &domainnamelen, &peUse);
+			LookupAccountSidW(NULL, sid,  oname, &namelen, doname, &domainnamelen, &peUse);
 			wcout<<"SID: " << doname << "/" << oname <<"\n";
 			mask = ((ACCESS_DENIED_ACE *) ace)->Mask;
 		}
