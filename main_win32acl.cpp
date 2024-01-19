@@ -1,17 +1,26 @@
 // win32acl.cpp : Defines the entry point for the console application.
 #include <iostream>
 #include <aclapi.h>
+// #include <stdio.h>
+#include <wchar.h>
 
 using namespace std;
 
+int fail(int st, const wchar_t* msg) {
+    if (fwprintf_s(stderr, L"%s", msg) == 0)
+        return 666;
+    return st;
+}
 
 int main(int argc, char* argv[])
 {
-    if ( argc != 2 ) {
-        cout<<"usage: win32acl " <<" <filename>\n";
-        return 1;
-    }
-
+    WCHAR error_buf[512]; // no varargs or macros here
+    WCHAR output_buf[512];
+    const int len_error_buf = 512;
+    // if ( argc != 2 ) {
+    //     cout<<"usage: win32acl " <<" <filename>\n";
+    //     return 1;
+    // }
     // fname = argv[1];
     LPCWSTR fname = L"C:\\windows";
 
@@ -23,7 +32,6 @@ int main(int argc, char* argv[])
     PSID sidowner = NULL;
     PSID sidgroup = NULL;
 
-
     ULONG result = GetNamedSecurityInfoW(fname
             ,SE_FILE_OBJECT
             ,OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION
@@ -33,21 +41,39 @@ int main(int argc, char* argv[])
             ,NULL
             ,&psd);
 
-    if (result != ERROR_SUCCESS){ return NULL;}
+    if (result != ERROR_SUCCESS){
+        int st = swprintf_s(error_buf, len_error_buf, L"GetNamedSecurityInfow failed code: %d\n", result);
+        return fail(1, error_buf);
+    }
 
-    wchar_t* oname = new WCHAR[512];
+    WCHAR oname_buf[512];
+    wchar_t* oname = oname_buf;
     DWORD namelen;
-    wchar_t* doname = new WCHAR[512];
+    WCHAR doname_buf[512];
+    wchar_t* doname = doname_buf;
     DWORD domainnamelen;
     SID_NAME_USE peUse;
     ACCESS_ALLOWED_ACE* ace;
 
-    LookupAccountSidW(NULL, sidowner,  oname, &namelen, doname, &domainnamelen, &peUse);
-    wcout<<"Owner: " << doname << "/" << oname <<"\n";
-
-    LookupAccountSidW(NULL, sidgroup,  oname, &namelen, doname, &domainnamelen, &peUse);
-    wcout<<"Group: " << doname << "/" << oname <<"\n";
-
+    result = LookupAccountSidW(NULL, sidowner,  oname, &namelen, doname, &domainnamelen, &peUse);
+    if (result != ERROR_SUCCESS){
+        int st = swprintf_s(error_buf, len_error_buf, L"LookupAccountSidW sidowner failed code: %d\n", result);
+        return fail(2, error_buf);
+    }
+    fwprintf_s(stdout, L"Owner: %s / %s\n", doname, oname);
+    // wcout<<"Owner: " << doname << "/" << oname <<"\n";
+    // if (result != ERROR_SUCCESS){
+    //     int st = swprintf_s(error_buf, len_error_buf, L"LookupAccountSidW sidowner failed code: %d", result);
+    //     return fail(4, error_buf);
+    // }
+    result = LookupAccountSidW(NULL, sidgroup,  oname, &namelen, doname, &domainnamelen, &peUse);
+    if (result != ERROR_SUCCESS){
+        int st = swprintf_s(error_buf, len_error_buf, L"LookupAccountSidW sidgroup failed code: %d\n", result);
+        return fail(3, error_buf);
+    }
+    fwprintf_s(stdout, L"Group: %s / %s\n", doname, oname);
+    // wcout<<"Group: " << doname << "/" << oname <<"\n";
+    fwprintf_s(stdout, L"DACL: %s / %s\n", doname, oname);
     wcout<< "\n\n\n::DACL::" << "\n";
     SID *sid;
     unsigned long i, mask;
